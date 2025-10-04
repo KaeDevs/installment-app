@@ -250,7 +250,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
             Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withOpacity(0.05),
+              color: AppTheme.secondaryColor.withAlpha(5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
