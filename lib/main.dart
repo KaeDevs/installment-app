@@ -6,6 +6,7 @@ import 'app/data/models/loan.dart';
 import 'app/routes/app_routes.dart';
 import 'app/services/loan_service.dart';
 import 'app/theme/app_theme.dart';
+import 'app/utils/web_config.dart';
 import 'app/widgets/initialization_widget.dart';
 
 void main() async {
@@ -32,12 +33,18 @@ class MyApp extends StatelessWidget {
           create: (context) => LoanService(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Installment Tracker',
-        theme: AppTheme.lightTheme,
-        home: const InitializationWidget(),
-        onGenerateRoute: AppRoutes.generateRoute,
-        debugShowCheckedModeBanner: false,
+      child: WebAppWrapper(
+        child: Builder(
+          builder: (context) => MaterialApp(
+            title: 'Installment Tracker',
+            theme: WebConfig.isWeb 
+                ? WebConfig.adjustThemeForWeb(AppTheme.lightTheme, context)
+                : AppTheme.lightTheme,
+            home: const InitializationWidget(),
+            onGenerateRoute: AppRoutes.generateRoute,
+            debugShowCheckedModeBanner: false,
+          ),
+        ),
       ),
     );
   }

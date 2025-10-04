@@ -7,7 +7,9 @@ import '../../services/loan_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/font_styles.dart';
 import '../../utils/formatters.dart';
+import '../../utils/responsive.dart';
 import '../../widgets/payment_button.dart';
+import '../../widgets/responsive_layout.dart';
 
 /// Screen for viewing loan details and adding payments
 class LoanDetailScreen extends StatefulWidget {
@@ -181,9 +183,9 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
       );
     }
 
-    return Scaffold(
+    return ResponsiveLayout(
       appBar: AppBar(
-        title: Text(_loan!.borrowerName, style: FontStyles.heading,),
+        title: Text(_loan!.borrowerName, style: FontStyles.heading),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -192,24 +194,70 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Loan summary card
-            _buildLoanSummaryCard(),
-            const SizedBox(height: 8),
+      body: Responsive.isDesktop(context) 
+          ? _buildDesktopLayout() 
+          : _buildMobileLayout(),
+    );
+  }
 
-            // Payment section
-            Center(child: _buildPaymentSection()),
-            const SizedBox(height: 16),
-
-            // Payment history
-            Center(child: _buildPaymentHistory()),
-          ],
-        ),
+  /// Build mobile layout (original single column)
+  Widget _buildMobileLayout() {
+    return SingleChildScrollView(
+      padding: Responsive.getScreenPadding(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildLoanSummaryCard(),
+          SizedBox(height: Responsive.getSpacing(context)),
+          Center(child: _buildPaymentSection()),
+          SizedBox(height: Responsive.getSpacing(context)),
+          Center(child: _buildPaymentHistory()),
+        ],
       ),
+    );
+  }
+
+  /// Build desktop layout (two column with sidebar)
+  Widget _buildDesktopLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left column - Loan summary and stats
+        Expanded(
+          flex: 2,
+          child: SingleChildScrollView(
+            padding: Responsive.getScreenPadding(context),
+            child: Column(
+              children: [
+                _buildLoanSummaryCard(),
+                SizedBox(height: Responsive.getSpacing(context)),
+                _buildPaymentSection(),
+              ],
+            ),
+          ),
+        ),
+        
+        // Right column - Payment history
+        Expanded(
+          flex: 3,
+          child: Container(
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
+              border: Border(
+                left: BorderSide(
+                  color: AppTheme.textSecondaryColor.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: SingleChildScrollView(
+              padding: Responsive.getScreenPadding(context),
+              child: _buildPaymentHistory(),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -439,106 +487,6 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                 color: color,
               ),
               textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build days and daily payment info
-  Widget _buildDaysInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.accentColor.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.accentColor.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.payment_outlined,
-                      color: AppTheme.accentColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Daily Payment',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                FittedBox(
-                  child: Text(
-                    Formatters.formatCurrency(_loan!.dailyInstallmentAmount),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.accentColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: AppTheme.textSecondaryColor.withOpacity(0.2),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Days Remaining',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      color: _loan!.daysLeft <= 3 
-                          ? AppTheme.errorColor 
-                          : AppTheme.accentColor,
-                      size: 20,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_loan!.daysLeft} days',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: _loan!.daysLeft <= 3 
-                        ? AppTheme.errorColor 
-                        : AppTheme.accentColor,
-                  ),
-                ),
-              ],
             ),
           ),
         ],
