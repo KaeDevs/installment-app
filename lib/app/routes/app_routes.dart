@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../modules/add_loan/add_loan_screen.dart';
 import '../modules/loan_detail/loan_detail_screen.dart';
+import '../modules/about/about_screen.dart';
 import '../modules/loan_list/loan_list_screen.dart';
 
 /// App routes configuration
@@ -9,6 +10,7 @@ class AppRoutes {
   static const String home = '/';
   static const String loanDetail = '/loan-detail';
   static const String addLoan = '/add-loan';
+  static const String about = '/about';
 
   /// Get the route configuration for the app
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -30,6 +32,11 @@ class AppRoutes {
       case addLoan:
         return MaterialPageRoute(
           builder: (_) => const AddLoanScreen(),
+          settings: settings,
+        );
+      case about:
+        return MaterialPageRoute(
+          builder: (_) => const AboutScreen(),
           settings: settings,
         );
       

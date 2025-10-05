@@ -20,6 +20,8 @@ class LoanService extends ChangeNotifier {
   String? _currentUid;
   StreamSubscription? _realtimeSub;
 
+  bool get _isRemoteAttached => _firestoreRepo != null && _currentUid != null;
+
   /// Delete a payment from a loan (also sync remote if attached)
 Future<void> deletePayment(String loanId, String paymentId) async {
   final loan = _loanBox.get(loanId);
@@ -27,7 +29,7 @@ Future<void> deletePayment(String loanId, String paymentId) async {
     loan.payments.removeWhere((p) => p.id == paymentId);
     await _loanBox.put(loanId, loan);
     await _paymentBox.delete(paymentId);
-    await _upsertRemote(loan); // reflect removal remotely
+    await _upsertRemote(loan); // reflect removal remotely (guarded internally)
     notifyListeners();
   }
 }
@@ -67,7 +69,7 @@ Future<void> deletePayment(String loanId, String paymentId) async {
   }
 
   Future<void> syncFromRemote({bool pushLocalAfter = false}) async {
-    if (_firestoreRepo == null || _currentUid == null) return;
+    if (!_isRemoteAttached) return;
     final remoteLoans = await _firestoreRepo!.fetchLoans(_currentUid!);
     await _reconcileRemote(remoteLoans);
     if (pushLocalAfter) {
@@ -98,23 +100,23 @@ Future<void> deletePayment(String loanId, String paymentId) async {
   }
 
   Future<void> _pushLocalMissing(Set<String> remoteIds) async {
-    if (_firestoreRepo == null || _currentUid == null) return;
+    if (!_isRemoteAttached) return;
     for (final loan in _loanBox.values) {
       if (!remoteIds.contains(loan.id)) {
-        await _firestoreRepo!.upsertLoan(_currentUid!, loan);
+        try { await _firestoreRepo!.upsertLoan(_currentUid!, loan); } catch (_) {}
       }
     }
   }
 
   Future<void> _upsertRemote(Loan loan) async {
-    if (_firestoreRepo != null && _currentUid != null) {
-      await _firestoreRepo!.upsertLoan(_currentUid!, loan);
+    if (_isRemoteAttached) {
+      try { await _firestoreRepo!.upsertLoan(_currentUid!, loan); } catch (_) {/* swallow permission after sign-out */}
     }
   }
 
   Future<void> _deleteRemote(String loanId) async {
-    if (_firestoreRepo != null && _currentUid != null) {
-      await _firestoreRepo!.deleteLoan(_currentUid!, loanId);
+    if (_isRemoteAttached) {
+      try { await _firestoreRepo!.deleteLoan(_currentUid!, loanId); } catch (_) {}
     }
   }
 

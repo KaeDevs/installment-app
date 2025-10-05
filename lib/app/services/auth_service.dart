@@ -7,6 +7,12 @@ class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _currentUser;
   bool _initializing = true;
+  bool _guestMode = false;
+  // Sample guest metadata
+  final Map<String, String> _guestProfile = {
+    'email': 'guest@example.com',
+    'displayName': 'Guest User',
+  };
 
   AuthService() {
     _auth.authStateChanges().listen((user) {
@@ -19,6 +25,9 @@ class AuthService extends ChangeNotifier {
   bool get isInitializing => _initializing;
   User? get user => _currentUser;
   bool get isSignedIn => _currentUser != null;
+  bool get isGuest => _guestMode && _currentUser == null;
+  String? get displayEmail => isGuest ? _guestProfile['email'] : _currentUser?.email;
+  String? get displayName => isGuest ? _guestProfile['displayName'] : _currentUser?.displayName;
 
   Future<void> signInWithGoogleWeb() async {
     // For web, use signInWithPopup
@@ -28,5 +37,14 @@ class AuthService extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    _guestMode = false;
+    notifyListeners();
+  }
+
+  /// Enable guest mode (no Firebase user). Used for testing / offline demo.
+  void continueAsGuest() {
+    _guestMode = true;
+    _initializing = false;
+    notifyListeners();
   }
 }

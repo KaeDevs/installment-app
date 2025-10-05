@@ -3,7 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, BindingBase;
 
 import 'app/data/models/loan.dart';
 import 'app/routes/app_routes.dart';
@@ -16,6 +16,7 @@ import 'app/widgets/post_auth_initializer.dart';
 import 'app/widgets/auth_gate.dart';
 
 void main() async {
+  BindingBase.debugZoneErrorsAreFatal = true;
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize Hive (still used for local persistence / offline cache)

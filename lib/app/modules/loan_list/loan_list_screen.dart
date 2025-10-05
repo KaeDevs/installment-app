@@ -11,6 +11,8 @@ import '../../utils/formatters.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/loan_card.dart';
 import '../../widgets/responsive_layout.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/app_footer.dart';
 
 /// Main screen displaying all active loans
 class LoanListScreen extends StatefulWidget {
@@ -99,28 +101,24 @@ class _LoanListScreenState extends State<LoanListScreen> {
   @override
 Widget build(BuildContext context) {
   return ResponsiveLayout(
-    appBar: AppBar(
-      elevation: 0,
-  backgroundColor: AppColors.primary,
-      title: Text(
-        'Installment Tracker',
-        style: FontStyles.heading,
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh, size: 26),
-          onPressed: _loadLoans,
-          tooltip: 'Refresh Loans',
-        ),
-      ],
+    appBar: AppHeader(
+      onAddLoan: () async {
+        final result = await AppRoutes.navigateToAddLoan(context);
+        if (result == true) {
+          _loadLoans();
+          _showSuccessSnackBar('Loan added successfully!');
+        }
+      },
+      onRefresh: _loadLoans,
     ),
     floatingActionButton: _buildResponsiveFAB(context),
     body: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         // Search bar section
         Container(
-          color: Colors.white,
+          // color: Colors.white,
           padding: Responsive.getScreenPadding(context),
           child: _buildSearchBar(),
         ),
@@ -128,33 +126,44 @@ Widget build(BuildContext context) {
         // Stats section with background
         Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.white,
-                Colors.white12,
-              ],
-            ),
+            // gradient: LinearGradient(
+            //   begin: Alignment.topCenter,
+            //   end: Alignment.bottomCenter,
+            //   colors: [
+            //     Colors.white,
+            //     Colors.white12,
+            //   ],
+            // ),
           ),
           padding: EdgeInsets.symmetric(
-            vertical: Responsive.getSpacing(context) / 2,
+            // vertical: Responsive.getSpacing(context) / 2,
             horizontal: Responsive.getSpacing(context) / 2,
           ),
           child: _buildStatisticsCards(),
         ),
 
-        SizedBox(height: Responsive.getSpacing(context) / 2),
+        // SizedBox(height: Responsive.getSpacing(context) / 2),
+        SizedBox(height: 10,),
 
         // Loans list section
         Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredLoans.isEmpty
-                    ? Center(child: _buildEmptyState())
-                    : _buildResponsiveLoansList(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  switchInCurve: Curves.easeInOut,
+                  switchOutCurve: Curves.linear,
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _filteredLoans.isEmpty
+                          ? Center(child: _buildEmptyState())
+                          : _buildResponsiveLoansList(),
+                ),
+              ),
+              const AppFooter(),
+            ],
           ),
         ),
       ],
