@@ -1,5 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:async';
+
+// Firestore sync (web only) - optional lazy import via interface
+import 'firestore_loan_repository.dart';
+import 'auth_service.dart';
 
 import '../data/models/loan.dart';
 
@@ -10,18 +16,18 @@ class LoanService extends ChangeNotifier {
   
   late Box<Loan> _loanBox;
   late Box<Payment> _paymentBox;
+  FirestoreLoanRepository? _firestoreRepo; // only initialized on web with auth
+  String? _currentUid;
+  StreamSubscription? _realtimeSub;
 
-  /// Delete a payment from a loan
+  /// Delete a payment from a loan (also sync remote if attached)
 Future<void> deletePayment(String loanId, String paymentId) async {
   final loan = _loanBox.get(loanId);
   if (loan != null) {
-    // Remove from loan's payment list
     loan.payments.removeWhere((p) => p.id == paymentId);
     await _loanBox.put(loanId, loan);
-
-    // Remove from global payment box
     await _paymentBox.delete(paymentId);
-
+    await _upsertRemote(loan); // reflect removal remotely
     notifyListeners();
   }
 }
@@ -31,6 +37,85 @@ Future<void> deletePayment(String loanId, String paymentId) async {
   Future<void> initialize() async {
     _loanBox = await Hive.openBox<Loan>(_loanBoxName);
     _paymentBox = await Hive.openBox<Payment>(_paymentBoxName);
+  }
+
+  /// Attach Firestore repo after user logs in (web only)
+  void attachRemote(AuthService auth) {
+    if (kIsWeb && auth.isSignedIn) {
+      _firestoreRepo ??= FirestoreLoanRepository();
+      _currentUid = auth.user!.uid;
+      // Initial pull + push any local-only loans then start realtime
+      syncFromRemote(pushLocalAfter: true);
+      _listenRealtime();
+    }
+  }
+
+  void detachRemote() {
+    _realtimeSub?.cancel();
+    _realtimeSub = null;
+    _currentUid = null;
+  }
+
+  void _listenRealtime() {
+    if (_firestoreRepo == null || _currentUid == null) return;
+    _realtimeSub?.cancel();
+    _realtimeSub = _firestoreRepo!
+        .realtimeLoans(_currentUid!)
+        .listen((remoteLoans) async {
+      await _reconcileRemote(remoteLoans);
+    });
+  }
+
+  Future<void> syncFromRemote({bool pushLocalAfter = false}) async {
+    if (_firestoreRepo == null || _currentUid == null) return;
+    final remoteLoans = await _firestoreRepo!.fetchLoans(_currentUid!);
+    await _reconcileRemote(remoteLoans);
+    if (pushLocalAfter) {
+      await _pushLocalMissing(remoteLoans.map((l) => l.id).toSet());
+    }
+  }
+
+  Future<void> _reconcileRemote(List<Loan> remoteLoans) async {
+    final remoteIds = remoteLoans.map((l) => l.id).toSet();
+
+    // Upsert remote loans locally
+    for (final loan in remoteLoans) {
+      await _loanBox.put(loan.id, loan);
+      for (final p in loan.payments) {
+        await _paymentBox.put(p.id, p);
+      }
+    }
+
+    // Remove local loans not in remote (remote wins after login)
+    final localIds = _loanBox.keys.cast<String>().toSet();
+    for (final localId in localIds) {
+      if (!remoteIds.contains(localId)) {
+        await _loanBox.delete(localId);
+      }
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _pushLocalMissing(Set<String> remoteIds) async {
+    if (_firestoreRepo == null || _currentUid == null) return;
+    for (final loan in _loanBox.values) {
+      if (!remoteIds.contains(loan.id)) {
+        await _firestoreRepo!.upsertLoan(_currentUid!, loan);
+      }
+    }
+  }
+
+  Future<void> _upsertRemote(Loan loan) async {
+    if (_firestoreRepo != null && _currentUid != null) {
+      await _firestoreRepo!.upsertLoan(_currentUid!, loan);
+    }
+  }
+
+  Future<void> _deleteRemote(String loanId) async {
+    if (_firestoreRepo != null && _currentUid != null) {
+      await _firestoreRepo!.deleteLoan(_currentUid!, loanId);
+    }
   }
 
   /// Get all active loans
@@ -51,18 +136,21 @@ Future<void> deletePayment(String loanId, String paymentId) async {
   /// Add a new loan
   Future<void> addLoan(Loan loan) async {
     await _loanBox.put(loan.id, loan);
+    await _upsertRemote(loan);
     notifyListeners();
   }
 
   /// Update an existing loan
   Future<void> updateLoan(Loan loan) async {
     await _loanBox.put(loan.id, loan);
+    await _upsertRemote(loan);
     notifyListeners();
   }
 
   /// Delete a loan
   Future<void> deleteLoan(String loanId) async {
     await _loanBox.delete(loanId);
+    await _deleteRemote(loanId);
     notifyListeners();
   }
 
@@ -72,6 +160,7 @@ Future<void> deletePayment(String loanId, String paymentId) async {
     if (loan != null) {
       loan.isActive = false;
       await _loanBox.put(loanId, loan);
+      await _upsertRemote(loan);
       notifyListeners();
     }
   }
@@ -83,6 +172,7 @@ Future<void> deletePayment(String loanId, String paymentId) async {
       loan.addPayment(payment);
       await _loanBox.put(loanId, loan);
       await _paymentBox.put(payment.id, payment);
+      await _upsertRemote(loan);
       notifyListeners();
     }
   }
@@ -203,6 +293,7 @@ Future<void> deletePayment(String loanId, String paymentId) async {
 
   /// Close the Hive boxes
   Future<void> close() async {
+    detachRemote();
     await _loanBox.close();
     await _paymentBox.close();
   }

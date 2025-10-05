@@ -6,6 +6,7 @@ import '../../data/models/loan.dart';
 import '../../routes/app_routes.dart';
 import '../../services/loan_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_colors.dart';
 import '../../utils/formatters.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/loan_card.dart';
@@ -78,7 +79,7 @@ class _LoanListScreenState extends State<LoanListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppTheme.errorColor,
+  backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -89,7 +90,7 @@ class _LoanListScreenState extends State<LoanListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppTheme.secondaryColor,
+  backgroundColor: AppColors.secondary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -100,7 +101,7 @@ Widget build(BuildContext context) {
   return ResponsiveLayout(
     appBar: AppBar(
       elevation: 0,
-      backgroundColor: AppTheme.primaryColor,
+  backgroundColor: AppColors.primary,
       title: Text(
         'Installment Tracker',
         style: FontStyles.heading,
@@ -206,7 +207,7 @@ Widget build(BuildContext context) {
             'Active Loans',
             stats['activeLoans'].toString(),
             Icons.account_balance_wallet,
-            AppTheme.primaryColor,
+            AppColors.primary,
           ),
         ),
         SizedBox(width: Responsive.getSpacing(context)),
@@ -215,7 +216,7 @@ Widget build(BuildContext context) {
             'Total Collected',
             Formatters.formatCurrency(stats['totalAmountCollected']),
             Icons.attach_money,
-            AppTheme.secondaryColor,
+            AppColors.secondary,
           ),
         ),
         SizedBox(width: Responsive.getSpacing(context)),
@@ -224,7 +225,7 @@ Widget build(BuildContext context) {
             'Total Lent',
             Formatters.formatCurrency(stats['totalAmountLent']),
             Icons.trending_up,
-            AppTheme.accentColor,
+            AppColors.accent,
           ),
         ),
         SizedBox(width: Responsive.getSpacing(context)),
@@ -233,7 +234,7 @@ Widget build(BuildContext context) {
             'Remaining',
             Formatters.formatCurrency(stats['totalRemainingBalance']),
             Icons.pending,
-            AppTheme.errorColor,
+            AppColors.error,
           ),
         ),
       ],
@@ -251,7 +252,7 @@ Widget build(BuildContext context) {
                 'Active Loans',
                 stats['activeLoans'].toString(),
                 Icons.account_balance_wallet,
-                AppTheme.primaryColor,
+                AppColors.primary,
               ),
             ),
             SizedBox(width: Responsive.getSpacing(context) / 2),
@@ -260,7 +261,7 @@ Widget build(BuildContext context) {
                 'Total Collected',
                 Formatters.formatCurrency(stats['totalAmountCollected']),
                 Icons.attach_money,
-                AppTheme.secondaryColor,
+                AppColors.secondary,
               ),
             ),
           ],
@@ -274,7 +275,7 @@ Widget build(BuildContext context) {
                   'Total Lent',
                   Formatters.formatCurrency(stats['totalAmountLent']),
                   Icons.trending_up,
-                  AppTheme.accentColor,
+                  AppColors.accent,
                 ),
               ),
               SizedBox(width: Responsive.getSpacing(context) / 2),
@@ -283,7 +284,7 @@ Widget build(BuildContext context) {
                   'Remaining',
                   Formatters.formatCurrency(stats['totalRemainingBalance']),
                   Icons.pending,
-                  AppTheme.errorColor,
+                  AppColors.error,
                 ),
               ),
             ],
@@ -343,7 +344,7 @@ Widget build(BuildContext context) {
             _showSuccessSnackBar('Loan added successfully!');
           }
         },
-        backgroundColor: AppTheme.secondaryColor,
+  backgroundColor: AppColors.secondary,
         icon: const Icon(Icons.add, size: 26),
         label: const Text(
           "Add Loan",
@@ -360,7 +361,7 @@ Widget build(BuildContext context) {
             _showSuccessSnackBar('Loan added successfully!');
           }
         },
-        backgroundColor: AppTheme.secondaryColor,
+  backgroundColor: AppColors.secondary,
         tooltip: 'Add New Loan',
         child: const Icon(Icons.add, size: 28),
       );
@@ -480,7 +481,7 @@ Widget _buildDesktopLoansList() {
                           '${loan.daysLeft} days left',
                           style: AppTheme.cardSubtitleText.copyWith(
                             fontSize: 11,
-                            color: loan.daysLeft <= 3 ? AppTheme.errorColor : null,
+                            color: loan.daysLeft <= 3 ? AppColors.error : null,
                             fontWeight: loan.daysLeft <= 3 ? FontWeight.bold : null,
                           ),
                         ),
@@ -506,7 +507,7 @@ Widget _buildDesktopLoansList() {
                             onPressed: () => _showLoanOptions(loan),
                             icon: const Icon(Icons.more_vert, size: 20),
                             style: IconButton.styleFrom(
-                              backgroundColor: AppTheme.textSecondaryColor.withOpacity(0.1),
+                              backgroundColor: AppColors.textSecondary.withOpacity(0.1),
                               padding: const EdgeInsets.all(8),
                             ),
                           ),
@@ -529,13 +530,13 @@ Widget _buildDesktopLoansList() {
     String chipText;
     
     if (loan.remainingBalance <= 0) {
-      chipColor = AppTheme.secondaryColor;
+  chipColor = AppColors.secondary;
       chipText = 'Completed';
     } else if (loan.daysLeft <= 3) {
-      chipColor = AppTheme.errorColor;
+  chipColor = AppColors.error;
       chipText = 'Due Soon';
     } else {
-      chipColor = AppTheme.accentColor;
+  chipColor = AppColors.accent;
       chipText = 'Active';
     }
     
@@ -580,11 +581,11 @@ Widget _buildDesktopLoansList() {
         const SizedBox(height: 4),
         LinearProgressIndicator(
           value: loan.progressPercentage,
-          backgroundColor: AppTheme.textSecondaryColor.withOpacity(0.2),
+          backgroundColor: AppColors.textSecondary.withOpacity(0.2),
           valueColor: AlwaysStoppedAnimation<Color>(
-            loan.progressPercentage >= 1.0 
-                ? AppTheme.secondaryColor 
-                : AppTheme.primaryColor,
+      loan.progressPercentage >= 1.0 
+        ? AppColors.secondary 
+        : AppColors.primary,
           ),
           minHeight: 8,
           borderRadius: BorderRadius.circular(4),
@@ -623,7 +624,7 @@ Widget _buildEmptyState() {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Icon(Icons.account_balance_wallet_outlined,
-              size: 80, color: AppTheme.textSecondaryColor),
+              size: 80, color: AppColors.textSecondary),
           const SizedBox(height: 20),
           Text(
             _searchController.text.isEmpty
@@ -632,7 +633,7 @@ Widget _buildEmptyState() {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondaryColor,
+              color: AppColors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -667,8 +668,8 @@ Widget _buildEmptyState() {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: AppTheme.errorColor),
-              title: const Text('Delete Loan', style: TextStyle(color: AppTheme.errorColor)),
+              leading: const Icon(Icons.delete, color: AppColors.error),
+              title: const Text('Delete Loan', style: TextStyle(color: AppColors.error)),
               onTap: () {
                 Navigator.pop(context);
                 _showDeleteConfirmation(loan);
@@ -697,7 +698,7 @@ Widget _buildEmptyState() {
               Navigator.pop(context);
               await _deleteLoan(loan.id);
             },
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],
