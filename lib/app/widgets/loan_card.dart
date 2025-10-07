@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/models/loan.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_colors.dart';
 import '../utils/formatters.dart';
 
 /// Reusable widget for displaying loan information in a card format
@@ -19,11 +20,20 @@ class LoanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    // Modern, flat card with thin border & subtle layered surface
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderMedium, width: 1),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        splashColor: AppColors.primary.withOpacity(.12),
+        highlightColor: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -36,18 +46,21 @@ class LoanCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       loan.borrowerName,
-                      style: AppTheme.cardTitleText,
+                      style: AppTheme.cardTitleText.copyWith(
+                        fontSize: 17,
+                        letterSpacing: .2,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   _buildStatusChip(),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               
               // Progress bar
               _buildProgressBar(),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               
               // Amount details
               Row(
@@ -56,7 +69,7 @@ class LoanCard extends StatelessWidget {
                     child: _buildAmountInfo(
                       'Total',
                       loan.totalAmount,
-                      AppTheme.amountText,
+                      AppTheme.amountText.copyWith(color: AppColors.primary),
                     ),
                   ),
                   Expanded(
@@ -64,8 +77,9 @@ class LoanCard extends StatelessWidget {
                       'Paid',
                       loan.amountPaid,
                       AppTheme.amountText.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color.fromARGB(255, 92, 132, 93),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: AppColors.success,
                       ),
                     ),
                   ),
@@ -82,7 +96,7 @@ class LoanCard extends StatelessWidget {
                   // ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               
               // Days information
               Row(
@@ -95,7 +109,7 @@ class LoanCard extends StatelessWidget {
                   Text(
                     '${loan.daysLeft} days left',
                     style: AppTheme.cardSubtitleText.copyWith(
-                      color: loan.daysLeft <= 3 ? AppTheme.errorColor : null,
+                      color: loan.daysLeft <= 3 ? AppColors.error : AppColors.textSecondary,
                       fontWeight: loan.daysLeft <= 3 ? FontWeight.bold : null,
                     ),
                   ),
@@ -114,22 +128,22 @@ class LoanCard extends StatelessWidget {
     String chipText;
     
     if (loan.remainingBalance <= 0) {
-      chipColor = AppTheme.secondaryColor;
+      chipColor = AppColors.success;
       chipText = 'Completed';
     } else if (loan.daysLeft <= 3) {
-      chipColor = AppTheme.errorColor;
+      chipColor = AppColors.error;
       chipText = 'Due Soon';
     } else {
-      chipColor = AppTheme.accentColor;
+      chipColor = AppColors.primary;
       chipText = 'Active';
     }
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: chipColor, width: 1),
+        color: chipColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: chipColor.withOpacity(.6), width: 1),
       ),
       child: Text(
         chipText,
@@ -163,16 +177,18 @@ class LoanCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: loan.progressPercentage,
-          backgroundColor: AppTheme.textSecondaryColor.withOpacity(0.2),
-          valueColor: AlwaysStoppedAnimation<Color>(
-            loan.progressPercentage >= 1.0 
-                ? AppTheme.secondaryColor 
-                : AppTheme.primaryColor,
-          ),
-          minHeight: 8,
+        ClipRRect(
           borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: loan.progressPercentage,
+            backgroundColor: AppColors.borderLight.withOpacity(.5),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              loan.progressPercentage >= 1.0
+                  ? AppColors.success
+                  : AppColors.primary,
+            ),
+            minHeight: 6,
+          ),
         ),
       ],
     );

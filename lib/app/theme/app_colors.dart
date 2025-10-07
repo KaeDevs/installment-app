@@ -1,46 +1,46 @@
 import 'package:flutter/material.dart';
 
 /// Modern dark color palette for the Installment Tracker app
-/// Clean, minimal, and sophisticated dark theme
+/// Sleek black background with vibrant blue accents
 class AppColors {
-  // Primary Colors - Modern Dark Theme
-  static const Color deepSlate = Color(0xFF0F172A);     // Deep slate background
-  static const Color slate = Color(0xFF1E293B);         // Slate surfaces
-  static const Color mediumSlate = Color(0xFF334155);   // Medium slate
-  static const Color violet = Color(0xFF8B5CF6);        // Vibrant violet accent
-  static const Color softViolet = Color(0xFFA78BFA);    // Soft violet
+  // Primary Colors - Modern Dark Blue Theme
+  static const Color deepSlate = Color(0xFF0A0A0A);     // Pure dark background
+  static const Color slate = Color(0xFF1A1A1A);         // Dark surfaces
+  static const Color mediumSlate = Color(0xFF2A2A2A);   // Medium dark
+  static const Color violet = Color(0xFF0EA5E9);        // Vibrant blue accent
+  static const Color softViolet = Color(0xFF38BDF8);    // Soft blue
   
   // Extended palette for UI elements
   static const Color primaryDark = deepSlate;
   static const Color primary = violet;
   static const Color primaryLight = softViolet;
   
-  static const Color secondary = Color(0xFF06B6D4);     // Cyan accent
-  static const Color secondaryLight = Color(0xFF22D3EE);
+  static const Color secondary = Color(0xFF0EA5E9);     // Blue accent
+  static const Color secondaryLight = Color(0xFF38BDF8);
   
   static const Color accent = violet;
   static const Color accentLight = softViolet;
   
   // Neutral colors - Dark theme
-  static const Color background = Color(0xFF0F172A);    // Deep slate
-  static const Color surface = Color(0xFF1E293B);       // Elevated slate
-  static const Color surfaceVariant = Color(0xFF334155); // Variant slate
+  static const Color background = Color(0xFF0A0A0A);    // Pure dark background
+  static const Color surface = Color(0xFF1A1A1A);       // Dark elevated surface
+  static const Color surfaceVariant = Color(0xFF2A2A2A); // Variant surface
   
   // Text colors - High contrast for dark mode
-  static const Color textPrimary = Color(0xFFF1F5F9);   // Almost white
-  static const Color textSecondary = Color(0xFFCBD5E1); // Light gray
-  static const Color textTertiary = Color(0xFF94A3B8);  // Muted gray
+  static const Color textPrimary = Color(0xFFF5F5F5);   // Almost white
+  static const Color textSecondary = Color(0xFFB0B0B0); // Light gray
+  static const Color textTertiary = Color(0xFF808080);  // Muted gray
   
   // Status colors - Vibrant and modern
   static const Color success = Color(0xFF10B981);       // Emerald green
   static const Color warning = Color(0xFFF59E0B);       // Amber
   static const Color error = Color(0xFFF43F5E);         // Rose red
-  static const Color info = Color(0xFF06B6D4);          // Cyan
+  static const Color info = Color(0xFF0EA5E9);          // Blue
   
   // Border colors - Subtle in dark theme
-  static const Color borderLight = Color(0xFF334155);   // Subtle slate
-  static const Color borderMedium = Color(0xFF475569);  // Medium slate
-  static const Color borderDark = Color(0xFF64748B);    // Lighter slate
+  static const Color borderLight = Color(0xFF2A2A2A);   // Subtle dark
+  static const Color borderMedium = Color(0xFF3A3A3A);  // Medium dark
+  static const Color borderDark = Color(0xFF4A4A4A);    // Lighter dark
   
   // Semantic colors for loan management
   static const Color paid = success;

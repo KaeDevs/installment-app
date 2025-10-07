@@ -7,6 +7,7 @@ import '../../services/loan_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/font_styles.dart';
 import '../../utils/formatters.dart';
+import '../../utils/loan_exporter.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/payment_button.dart';
 import '../../widgets/responsive_layout.dart';
@@ -31,6 +32,43 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
   void initState() {
     super.initState();
     _loadLoan();
+  }
+
+  /// Handle export / print menu selections
+  void _handleMenu(String value) {
+    if (_loan == null) return;
+    switch (value) {
+      case 'print':
+        final ok = LoanExporter.printLoan(_loan!);
+        _showSnack(ok ? 'Print dialog opened (web)' : 'Print not supported on this platform');
+        break;
+      case 'csv':
+        final ok = LoanExporter.downloadCsv(_loan!);
+        if (!ok) {
+          // Fallback: copy instead
+          final csv = LoanExporter.buildCsv(_loan!);
+          Clipboard.setData(ClipboardData(text: csv));
+          _showSnack('CSV copied (download unsupported)');
+        } else {
+          _showSnack('CSV download started');
+        }
+        break;
+      case 'copy':
+        final csv = LoanExporter.buildCsv(_loan!);
+        Clipboard.setData(ClipboardData(text: csv));
+        _showSnack('CSV copied to clipboard');
+        break;
+    }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -192,6 +230,37 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
             onPressed: _loadLoan,
             tooltip: 'Refresh',
           ),
+          if (_loan != null)
+            PopupMenuButton<String>(
+              tooltip: 'Export / Print',
+              onSelected: _handleMenu,
+              itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'print',
+                  child: ListTile(
+                    leading: Icon(Icons.print),
+                    title: Text('Print Loan'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'csv',
+                  child: ListTile(
+                    leading: Icon(Icons.download),
+                    title: Text('Download CSV'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'copy',
+                  child: ListTile(
+                    leading: Icon(Icons.copy),
+                    title: Text('Copy CSV to Clipboard'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
       body: Responsive.isDesktop(context) 
