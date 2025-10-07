@@ -26,15 +26,21 @@ class _LoanListScreenState extends State<LoanListScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Loan> _filteredLoans = [];
   bool _isLoading = true;
+  VoidCallback? _searchListener;
 
   @override
   void initState() {
     super.initState();
+    _searchListener = () => setState(() {}); // rebuild suffix clear icon
+    _searchController.addListener(_searchListener!);
     _loadLoans();
   }
 
   @override
   void dispose() {
+    if (_searchListener != null) {
+      _searchController.removeListener(_searchListener!);
+    }
     _searchController.dispose();
     super.dispose();
   }
@@ -112,61 +118,42 @@ Widget build(BuildContext context) {
       onRefresh: _loadLoans,
     ),
     floatingActionButton: _buildResponsiveFAB(context),
-    body: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        // Search bar section
-        Container(
-          // color: Colors.white,
-          padding: Responsive.getScreenPadding(context),
-          child: _buildSearchBar(),
-        ),
-
-        // Stats section with background
-        Container(
-          decoration: const BoxDecoration(
-            // gradient: LinearGradient(
-            //   begin: Alignment.topCenter,
-            //   end: Alignment.bottomCenter,
-            //   colors: [
-            //     Colors.white,
-            //     Colors.white12,
-            //   ],
-            // ),
-          ),
-          padding: EdgeInsets.symmetric(
-            // vertical: Responsive.getSpacing(context) / 2,
-            horizontal: Responsive.getSpacing(context) / 2,
-          ),
-          child: _buildStatisticsCards(),
-        ),
-
-        // SizedBox(height: Responsive.getSpacing(context) / 2),
-        SizedBox(height: 10,),
-
-        // Loans list section
-        Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  switchInCurve: Curves.easeInOut,
-                  switchOutCurve: Curves.linear,
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _filteredLoans.isEmpty
-                          ? Center(child: _buildEmptyState())
-                          : _buildResponsiveLoansList(),
-                ),
+    body: LayoutBuilder(
+      builder: (ctx, constraints) {
+        final width = constraints.maxWidth;
+        final horizontalPad = width < 600
+            ? 12.0
+            : width < 960
+                ? 18.0
+                : 28.0;
+        return Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(horizontalPad, 12, horizontalPad, 4),
+              child: _buildSearchBar(),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPad, vertical: 4),
+              child: _buildStatisticsCards(),
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _filteredLoans.isEmpty
+                        ? _buildEmptyState()
+                        : _buildAdaptiveCollection(width),
               ),
-              const AppFooter(),
-            ],
-          ),
-        ),
-      ],
+            ),
+            const AppFooter(),
+          ],
+        );
+      },
     ),
   );
 }
@@ -398,167 +385,143 @@ Widget build(BuildContext context) {
     }
   }
 
-  /// Build responsive loans list that adapts to screen size
-  Widget _buildResponsiveLoansList() {
-    if (Responsive.isMobile(context)) {
-      return _buildMobileLoansList();
+  /// Adaptive collection builder (list or grid based on width)
+  Widget _buildAdaptiveCollection(double width) {
+    if (width < 600) return _buildMobileList();
+    int columns;
+    if (width < 960) {
+      columns = 2;
+    } else if (width < 1280) {
+      columns = 3;
+    } else if (width < 1600) {
+      columns = 4;
     } else {
-      return _buildDesktopLoansList();
+      columns = 5;
     }
+    return _buildGrid(columns, width);
   }
 
-  /// Build mobile loans list (original list view)
-  Widget _buildMobileLoansList() {
-    return RefreshIndicator(
-      onRefresh: _loadLoans,
-      child: ListView.builder(
-        padding: EdgeInsets.symmetric(vertical: Responsive.getSpacing(context) / 2),
-        itemCount: _filteredLoans.length,
-        itemBuilder: (context, index) {
-          final loan = _filteredLoans[index];
-          return LoanCard(
-            loan: loan,
-            onTap: () => AppRoutes.navigateToLoanDetail(context, loan.id),
-            onLongPress: () => _showLoanOptions(loan),
-          );
-        },
-      ),
-    );
-  }
+  Widget _buildMobileList() => RefreshIndicator(
+        onRefresh: _loadLoans,
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+          itemCount: _filteredLoans.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final loan = _filteredLoans[index];
+            return LoanCard(
+              loan: loan,
+              onTap: () => AppRoutes.navigateToLoanDetail(context, loan.id),
+              onLongPress: () => _showLoanOptions(loan),
+            );
+          },
+        ),
+      );
 
-  /// Build desktop/tablet loans list (grid view)
-  /// Build desktop/tablet loans list (grid view)
-Widget _buildDesktopLoansList() {
-  return Align(
-    alignment: Alignment.topCenter,
-    child: ResponsiveContainer(
-      child: RefreshIndicator(
+    Widget _buildGrid(int columns, double width) {
+      final gap = 16.0;
+      final horizontalPadding = 12.0;
+      final usableWidth = width - (horizontalPadding * 2) - (gap * (columns - 1));
+      final cardWidth = usableWidth / columns;
+
+      return RefreshIndicator(
         onRefresh: _loadLoans,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: ResponsiveGrid(
-            childAspectRatio: Responsive.isTablet(context) ? 0.85 : 0.8,
+          padding: EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 16),
+          child: Wrap(
+            spacing: gap,
+              runSpacing: gap,
             children: _filteredLoans.map((loan) {
-              return InkWell(
-                onTap: () => AppRoutes.navigateToLoanDetail(context, loan.id),
-                borderRadius: BorderRadius.circular(12),
-                child: ResponsiveCard(
-                  child: Center(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Loan card content adapted for grid
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                loan.borrowerName,
-                                style: AppTheme.cardTitleText.copyWith(
-                                  fontSize: Responsive.responsive(
-                                    context,
-                                    mobile: 18,
-                                    tablet: 20,
-                                    desktop: 22,
-                                  ),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            _buildStatusChip(loan),
-                          ],
-                        ),
-                        SizedBox(height: Responsive.getSpacing(context) / 2),
-                        
-                        // Progress bar
-                        _buildProgressBar(loan),
-                        SizedBox(height: Responsive.getSpacing(context) / 2),
-                        
-                        // Amount info
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildAmountInfo(
-                                'Total',
-                                loan.totalAmount,
-                                AppTheme.amountText.copyWith(fontSize: 14),
-                              ),
-                            ),
-                            Expanded(
-                              child: _buildAmountInfo(
-                                'Paid',
-                                loan.amountPaid,
-                                AppTheme.amountText.copyWith(
-                                  fontSize: 14,
-                                  color: const Color.fromARGB(255, 92, 132, 93),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: Responsive.getSpacing(context) / 2),
-                        
-                        // Bottom info
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                'Daily: ${Formatters.formatCurrency(loan.dailyInstallmentAmount)}',
-                                style: AppTheme.cardSubtitleText.copyWith(fontSize: 11),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              '${loan.daysLeft} days left',
-                              style: AppTheme.cardSubtitleText.copyWith(
-                                fontSize: 11,
-                                color: loan.daysLeft <= 3 ? AppColors.error : null,
-                                fontWeight: loan.daysLeft <= 3 ? FontWeight.bold : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-                        // Action buttons for desktop
-                        if (Responsive.isDesktop(context)) ...[
-                          SizedBox(height: Responsive.getSpacing(context) / 2),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () => AppRoutes.navigateToLoanDetail(context, loan.id),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                  ),
-                                  child: const Text('View Details', style: TextStyle(fontSize: 13)),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: () => _showLoanOptions(loan),
-                                icon: const Icon(Icons.more_vert, size: 20),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: AppColors.textSecondary.withOpacity(0.1),
-                                  padding: const EdgeInsets.all(8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
+              return SizedBox(
+                width: cardWidth,
+                child: _gridTile(loan),
               );
             }).toList(),
           ),
         ),
-      ),
-    ),
-  );
-}
+      );
+    }
+
+    Widget _gridTile(Loan loan) {
+      final completed = loan.remainingBalance <= 0 || loan.progressPercentage >= 1.0;
+      final dueSoon = !completed && loan.daysLeft <= 3;
+      return InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => AppRoutes.navigateToLoanDetail(context, loan.id),
+        onLongPress: () => _showLoanOptions(loan),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderMedium, width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      loan.borrowerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.cardTitleText.copyWith(fontSize: 16),
+                    ),
+                  ),
+                  _buildStatusChip(loan),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _buildProgressBar(loan),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildAmountInfo('Total', loan.totalAmount,
+                        AppTheme.amountText.copyWith(fontSize: 13)),
+                  ),
+                  Expanded(
+                    child: _buildAmountInfo('Paid', loan.amountPaid,
+                        AppTheme.amountText.copyWith(fontSize: 13, color: AppColors.success)),
+                  ),
+                  Expanded(
+                    child: _buildAmountInfo('Remain', loan.remainingBalance < 0 ? 0 : loan.remainingBalance,
+                        AppTheme.amountText.copyWith(fontSize: 13, color: AppColors.textSecondary)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Daily: ${Formatters.formatCurrency(loan.dailyInstallmentAmount)}',
+                    style: AppTheme.cardSubtitleText.copyWith(fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    completed ? 'Done' : '${loan.daysLeft} d',
+                    style: AppTheme.cardSubtitleText.copyWith(
+                      fontSize: 11,
+                      color: completed
+                          ? AppColors.secondary
+                          : dueSoon
+                              ? AppColors.error
+                              : AppColors.textSecondary,
+                      fontWeight: (completed || dueSoon) ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   /// Build status chip for loan
   Widget _buildStatusChip(Loan loan) {
     Color chipColor;
