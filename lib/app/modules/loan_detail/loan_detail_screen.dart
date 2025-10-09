@@ -698,14 +698,13 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                     ),
                   );
                 },
-                onDismissed: (direction) {
-                  setState(() {
-                    payments.removeAt(index);
-                  });
-                  context.read<LoanService>().deletePayment(
-                    payment.id,
+                onDismissed: (direction) async {
+                  await context.read<LoanService>().deletePayment(
+                    _loan!.id,
                     payment.id,
                   );
+                  await _loadLoan(); // Reload loan to get updated data from backend
+                  _showSuccessSnackBar('Payment deleted successfully!');
                 },
                 child: ListTile(
                   leading: CircleAvatar(

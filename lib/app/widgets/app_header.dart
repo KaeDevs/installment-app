@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import '../routes/app_routes.dart';
 import '../theme/app_colors.dart';
@@ -232,15 +233,41 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Support the Project'),
+        title: const Text('Support the Project', style: TextStyle(color: AppColors.primary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+            children: [
             Text('Thank you for considering a donation!'),
             SizedBox(height: 12),
-            Text('Add your Buy Me a Coffee / Ko-fi / Stripe link here.'),
-          ],
+            GestureDetector(
+              onTap: () async {
+              final url = 'https://buymeacoffee.com/kaedevs';
+              // ignore: deprecated_member_use
+              await Future.delayed(Duration.zero); // ensure dialog closes before launching
+              // Use url_launcher to open the link
+              // Add url_launcher to pubspec.yaml and import it at the top
+              // import 'package:url_launcher/url_launcher.dart';
+              if (await canLaunchUrl(Uri.parse(url))) {
+                await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+              }
+              },
+              child: Text(
+              'https://buymeacoffee.com/kaedevs',
+              style: TextStyle(
+                color: AppColors.primary,
+                decoration: TextDecoration.underline,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Tap the link above to copy and open in your browser.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),

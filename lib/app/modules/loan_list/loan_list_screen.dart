@@ -230,7 +230,8 @@ Widget build(BuildContext context) {
                         : _buildAdaptiveCollection(width),
               ),
             ),
-            const AppFooter(),
+            const SizedBox(height: 32),
+            // const AppFooter(),
           ],
         );
       },
@@ -505,20 +506,23 @@ Widget build(BuildContext context) {
       final usableWidth = width - (horizontalPadding * 2) - (gap * (columns - 1));
       final cardWidth = usableWidth / columns;
 
-      return RefreshIndicator(
-        onRefresh: _loadLoans,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 16),
-          child: Wrap(
-            spacing: gap,
-              runSpacing: gap,
-            children: _filteredLoans.map((loan) {
-              return SizedBox(
-                width: cardWidth,
-                child: _gridTile(loan),
-              );
-            }).toList(),
+      return Align(
+        alignment: Alignment.topCenter,
+        child: RefreshIndicator(
+          onRefresh: _loadLoans,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 16),
+            child: Wrap(
+              spacing: gap,
+                runSpacing: gap,
+              children: _filteredLoans.map((loan) {
+                return SizedBox(
+                  width: cardWidth,
+                  child: _gridTile(loan),
+                );
+              }).toList(),
+            ),
           ),
         ),
       );
@@ -662,13 +666,21 @@ Widget build(BuildContext context) {
         child: Row(
           children: [
             if (selected)
-              Icon(
-                _ascending ? Icons.north_east : Icons.south_west,
-                size: 16,
-                color: AppColors.primary,
+              Row(
+                children: [
+                  Icon(
+                    _ascending ? Icons.north_east : Icons.south_west,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+                ],
               )
             else
-              const SizedBox(width: 16),
+              
+                  Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+              
+              
           ],
         ),
       );

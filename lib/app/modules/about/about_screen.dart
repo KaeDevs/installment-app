@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/app_footer.dart';
 
@@ -22,7 +23,7 @@ class AboutScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Installment Tracker', style: Theme.of(context).textTheme.headlineMedium),
+                Text('Installment Tracker', style: Theme.of(context).textTheme.headlineMedium!.copyWith(color: Theme.of(context).colorScheme.primary)),
                 const SizedBox(height: 8),
                 Text('A lightweight daily loan installment tracking tool with optional cloud sync via Firebase.'),
                 const SizedBox(height: 24),
@@ -48,9 +49,9 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ]),
                 const SizedBox(height: 32),
-                Text('Version 1.0.0', style: Theme.of(context).textTheme.bodySmall),
+                Text('Version 1.0.0', style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 32),
-                const AppFooter(),
+                // const AppFooter(),
               ],
             ),
           ),
@@ -65,7 +66,21 @@ class AboutScreen extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Support the project'),
-        content: const Text('Configure a real donation link (e.g., BuyMeACoffee, Ko-fi, Patreon, Stripe Checkout).'),
+        content: InkWell(
+          child: const Text(
+            'https://buymeacoffee.com/kaedevs',
+            style: TextStyle(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+          onTap: () async {
+            final url = Uri.parse('https://buymeacoffee.com/kaedevs');
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            }
+          },
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
         ],
