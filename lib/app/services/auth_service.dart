@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 /// AuthService handles Firebase Authentication (web-focused Google Sign-In).
 class AuthService extends ChangeNotifier {
@@ -36,9 +35,15 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
-    _guestMode = false;
-    notifyListeners();
+    try {
+      // Proactively sign out and let listeners detach remote
+      await _auth.signOut();
+    } catch (_) {
+      // Swallow to avoid surfacing during race conditions
+    } finally {
+      _guestMode = false;
+      notifyListeners();
+    }
   }
 
   /// Enable guest mode (no Firebase user). Used for testing / offline demo.

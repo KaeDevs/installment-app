@@ -28,6 +28,10 @@ class _LoanListScreenState extends State<LoanListScreen> {
   bool _isLoading = true;
   VoidCallback? _searchListener;
 
+  // Sorting state
+  LoanSortField _sortField = LoanSortField.createdAt; // default: newest first
+  bool _ascending = false; // newest -> oldest
+
   @override
   void initState() {
     super.initState();
@@ -79,7 +83,77 @@ class _LoanListScreenState extends State<LoanListScreen> {
     
     setState(() {
       _filteredLoans = filtered;
+      _sortLoans();
     });
+  }
+
+  void _sortLoans() {
+    _filteredLoans.sort((a, b) {
+      int cmp = 0;
+      switch (_sortField) {
+        case LoanSortField.borrower:
+          cmp = a.borrowerName.toLowerCase().compareTo(b.borrowerName.toLowerCase());
+          break;
+        case LoanSortField.totalAmount:
+          cmp = a.totalAmount.compareTo(b.totalAmount);
+          break;
+        case LoanSortField.amountPaid:
+          cmp = a.amountPaid.compareTo(b.amountPaid);
+          break;
+        case LoanSortField.remaining:
+          cmp = a.remainingBalance.compareTo(b.remainingBalance);
+          break;
+        case LoanSortField.progress:
+          cmp = a.progressPercentage.compareTo(b.progressPercentage);
+          break;
+        case LoanSortField.daysLeft:
+          cmp = a.daysLeft.compareTo(b.daysLeft);
+          break;
+        case LoanSortField.createdAt:
+          cmp = a.createdAt.compareTo(b.createdAt);
+          break;
+      }
+      return _ascending ? cmp : -cmp;
+    });
+  }
+
+  void _changeSortField(LoanSortField field) {
+    setState(() {
+      if (_sortField == field) {
+        // toggle direction if same field tapped again
+        _ascending = !_ascending;
+      } else {
+        _sortField = field;
+        // sensible defaults per field
+        if (field == LoanSortField.createdAt) {
+          _ascending = false; // newest first
+        } else if (field == LoanSortField.borrower) {
+          _ascending = true; // A->Z
+        } else {
+          _ascending = false; // high->low for numeric metrics
+        }
+      }
+      _sortLoans();
+    });
+  }
+
+  String _sortLabelShort(LoanSortField field) {
+    switch (field) {
+      case LoanSortField.borrower:
+        return 'Name';
+      case LoanSortField.totalAmount:
+        return 'Total';
+      case LoanSortField.amountPaid:
+        return 'Paid';
+      case LoanSortField.remaining:
+        return 'Remain';
+      case LoanSortField.progress:
+        return 'Prog';
+      case LoanSortField.daysLeft:
+        return 'Days';
+      case LoanSortField.createdAt:
+        return 'Recent';
+    }
   }
 
   /// Show error message
@@ -130,7 +204,13 @@ Widget build(BuildContext context) {
           children: [
             Padding(
               padding: EdgeInsets.fromLTRB(horizontalPad, 12, horizontalPad, 4),
-              child: _buildSearchBar(),
+              child: Row(
+                children: [
+                  Expanded(child: _buildSearchBar()),
+                  const SizedBox(width: 8),
+                  _buildSortControl(),
+                ],
+              ),
             ),
             Padding(
               padding: EdgeInsets.symmetric(
@@ -522,6 +602,77 @@ Widget build(BuildContext context) {
         ),
       );
     }
+
+    Widget _buildSortControl() {
+      final arrow = _ascending ? Icons.arrow_upward : Icons.arrow_downward;
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderMedium, width: 1),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PopupMenuButton<LoanSortField>(
+              tooltip: 'Sort field',
+              position: PopupMenuPosition.under,
+              onSelected: _changeSortField,
+              itemBuilder: (_) => [
+                _sortMenuItem(LoanSortField.createdAt, 'Created (Recent)') ,
+                _sortMenuItem(LoanSortField.borrower, 'Borrower A-Z'),
+                _sortMenuItem(LoanSortField.totalAmount, 'Total Amount'),
+                _sortMenuItem(LoanSortField.amountPaid, 'Amount Paid'),
+                _sortMenuItem(LoanSortField.remaining, 'Remaining'),
+                _sortMenuItem(LoanSortField.progress, 'Progress'),
+                _sortMenuItem(LoanSortField.daysLeft, 'Days Left'),
+              ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.sort, size: 18, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(
+                      _sortLabelShort(_sortField),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => _changeSortField(_sortField),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                child: Icon(arrow, size: 16, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    PopupMenuItem<LoanSortField> _sortMenuItem(LoanSortField field, String label) {
+      final selected = field == _sortField;
+      return PopupMenuItem<LoanSortField>(
+        value: field,
+        child: Row(
+          children: [
+            if (selected)
+              Icon(
+                _ascending ? Icons.north_east : Icons.south_west,
+                size: 16,
+                color: AppColors.primary,
+              )
+            else
+              const SizedBox(width: 16),
+          ],
+        ),
+      );
+    }
   /// Build status chip for loan
   Widget _buildStatusChip(Loan loan) {
     Color chipColor;
@@ -648,6 +799,7 @@ Widget _buildEmptyState() {
     ),
   );
 }
+
   /// Show loan options on long press
   void _showLoanOptions(Loan loan) {
     showModalBottomSheet(
@@ -716,3 +868,6 @@ Widget _buildEmptyState() {
     }
   }
 }
+
+/// Sortable fields for loans list (top-level)
+enum LoanSortField { createdAt, borrower, totalAmount, amountPaid, remaining, progress, daysLeft }

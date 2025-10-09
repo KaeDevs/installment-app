@@ -64,8 +64,17 @@ Future<void> deletePayment(String loanId, String paymentId) async {
     _realtimeSub = _firestoreRepo!
         .realtimeLoans(_currentUid!)
         .listen((remoteLoans) async {
-      await _reconcileRemote(remoteLoans);
-    });
+          await _reconcileRemote(remoteLoans);
+        }, onError: (e) {
+          // Swallow permission errors that can occur during sign-out race
+          final msg = e.toString();
+          if (msg.contains('permission-denied') || msg.contains('PERMISSION_DENIED')) {
+            // Optionally detach to be safe
+            _realtimeSub?.cancel();
+            _realtimeSub = null;
+          }
+          // Ignore other errors here to avoid UI disruption
+        }, cancelOnError: true);
   }
 
   Future<void> syncFromRemote({bool pushLocalAfter = false}) async {
